@@ -1,0 +1,250 @@
+{% extends 'layouts/main.html' %}
+
+{% block title %}
+Branch Wise Report
+{% endblock title %}
+
+{% block style %}
+<style> 
+            
+             
+  th { 
+      white-space: nowrap; 
+      position: sticky;
+      top: 0;
+      background-color: #FFFFFF; 
+      z-index: 100;               
+  } 
+  td { 
+      white-space: nowrap; 
+  }
+  tr:nth-child(even) {
+    background-color: #f2f2f2;
+  } 
+  </style>
+{% endblock style %}
+
+{% block content %}
+{% include 'inc/topnav.html' %}
+{% include 'inc/menu.html' %}
+
+
+<body class="hold-transition sidebar-mini sidebar-collapse">
+  <div class="wrapper">
+    
+    <div class="content-wrapper">
+      <section class="content-header">
+        <div class="container-fluid">
+          <div class="row mb-2">
+            <div class="col-sm-6">&nbsp;
+            </div>
+            <div class="col-sm-6">
+              <ol class="breadcrumb float-sm-right">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Home</a></li>
+                <li class="breadcrumb-item active">Report</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </section> 
+      <!-- Main content -->
+      <section class="content">
+        <div class="card card-primary">
+          <div class="card-header">
+            <h3 class="card-title">Branch Wise Report</h3>
+            <div class="card-tools">
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-2">
+                <div class="form-group-row">   
+                  <label>From</label>
+                  <input type="date" class="form-control" id="from" name="from">
+                </div>
+              </div>
+              <div class="col-2">
+                <div class="form-group-row">   
+                  <label>To</label>
+                  <input type="date" class="form-control" id="to" name="to">
+                </div>
+              </div>
+             
+             
+            </div>
+            <br>
+            <div class="row">
+              <div class="col-4">
+                <div class="form-group-row">  
+                  <button class="btn btn-primary" type="button" id="btn_result">Result</button>
+                </div>
+              </div>
+            </div><!--row-->
+            <br>
+            <table id="overallreport" class="table table-bordered table-sm table-striped">
+              <!-- Table content will be dynamically populated -->
+            </table>
+            <br><br><br>
+          </div><!--card--->
+        </div>
+      </section>
+    </div>
+  </div>
+
+  {% endblock content %}
+  {% include 'inc/footer.html' %}
+  {% block scripts %} 
+  <script>
+    $(function(){
+      $('.select2').select2();
+    });
+
+    $('#overallreport').DataTable({
+"scrollX": false,
+"scrollY": 350,
+"ordering": false,
+searching: false,
+paging: false,
+info: false,
+fixedHeader: {
+        header: true,
+        headerOffset: 0
+    },
+"columnDefs": [
+    { "visible": false, "targets": 0 },
+]
+});
+
+
+    // btn_result 
+    $(document).on('click', '#btn_result', function () {
+     
+      var from = document.getElementById('from').value;
+      var to = document.getElementById('to').value;
+    
+
+      $.ajax({
+        url: "{{ url_for('branchwisefetch_data') }}", 
+        type: "POST",
+        data: { from: from, to: to },
+        dataType: "json",
+        success: function (data) {
+          if (data.length === 0) {
+            Swal.fire({
+              position: 'center',
+              icon: 'error',
+              title: 'No More Data.!',
+              showConfirmButton: false,
+              timer: 1500
+            });
+          }
+
+          $('#overallreport').empty();
+          var thead = '<tr><th class="all" style="text-align:center;">Sl.No</th><th class="all" style="text-align:center;">Branch</th><th class="all" style="text-align:center;">Count of GM Name</th><th class="all" style="text-align:center;">Purchase Cost</th><th class="all" style="text-align:center;">Invoice Price</th><th class="all" style="text-align:center;">Margin</th><th class="all" style="text-align:center;">INS Margin</th><th class="all" style="text-align:center;">FIN Margin</th><th class="all" style="text-align:center;">ACC Margin</th><th class="all" style="text-align:center;">Incentive</th><th class="all" style="text-align:center;">Income</th><th class="all" style="text-align:center;">Offer PSM Share</th><th class="all" style="text-align:center;">PSM Offer</th><th class="all" style="text-align:center;">Delivery EXP</th><th class="all" style="text-align:center;">Incentive 2</th><th class="all" style="text-align:center;">Inventory</th><th class="all" style="text-align:center;">Total EXP</th><th class="all" style="text-align:center;">Net Margin</th></tr>';
+          $('#overallreport').append(thead);
+
+          var i = 1;
+          var gmnametotal = 0; 
+          var purchasetotal = 0; 
+          var invoicepricetotal = 0; 
+          var margintotal = 0; 
+          var insmargintotal = 0; 
+          var finmargintotal = 0; 
+          var accmargintotal = 0; 
+          var incentivetotal = 0; 
+          var incometotal = 0; 
+          var offerpsmsharetotal = 0; 
+          var psmoffertotal = 0; 
+          var deliveryexptotal = 0; 
+          var incentive1total = 0; 
+          var financecosttotal = 0; 
+          var totalexptotal = 0; 
+          var netmargintotal = 0; 
+
+          for (var count = 0; count < data.length; count++) {
+
+            var gname = parseFloat(data[count].gmname_count) || 0;
+            var purchase = parseFloat(data[count].total_purchasecost) || 0;
+            var invoiceprice = parseFloat(data[count].total_invoiceprice) || 0;
+            var margin = parseFloat(data[count].total_margin) || 0;
+            var insmargin = parseFloat(data[count].total_insmargin) || 0;
+            var finmargin = parseFloat(data[count].total_finmargin) || 0;
+            var accmargin = parseFloat(data[count].total_accmargin) || 0;
+            var incentive = parseFloat(data[count].total_incentive) || 0;
+            var income = parseFloat(data[count].total_income) || 0;
+            var offerpsmshare = parseFloat(data[count].total_offerpsmshare) || 0;
+            var psmoffer = parseFloat(data[count].total_psmoffer) || 0;
+            var deliveryexp = parseFloat(data[count].total_deliveryexp) || 0;
+            var incentive1 = parseFloat(data[count].total_incentive1) || 0;
+            var financecost = parseFloat(data[count].total_financecost) || 0;
+            var totalexp = parseFloat(data[count].total_totalexp) || 0;
+            var netmargin = parseFloat(data[count].total_netmargin) || 0;
+
+     
+            var html_data = '';
+            html_data += '<tr><td style="text-align:center;">' + i + '</td>';
+            html_data += '<td style="text-align:left;">' +(data[count].gmname ? data[count].gmname : '')+ '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].gmname_count ? data[count].gmname_count : '')+ '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].total_purchasecost ? data[count].total_purchasecost : ''))+ '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].total_invoiceprice ? data[count].total_invoiceprice : '')) + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].total_margin ? data[count].total_margin : '')) + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].total_insmargin ? data[count].total_insmargin : ''))+ '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].total_finmargin ? data[count].total_finmargin : ''))+ '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].total_accmargin ? data[count].total_accmargin : ''))+ '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].total_incentive ? data[count].total_incentive : '')) + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].total_income ? data[count].total_income : '')) + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].total_offerpsmshare ? data[count].total_offerpsmshare : ''))  + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].total_psmoffer ? data[count].total_psmoffer : ''))  + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].total_deliveryexp ? data[count].total_deliveryexp : ''))  + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].total_incentive1 ? data[count].total_incentive1 : '')) + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].total_financecost ? data[count].total_financecost : ''))  + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].total_totalexp ? data[count].total_totalexp : ''))  + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].total_netmargin ? data[count].total_netmargin : ''))+ '</td>';
+           
+            html_data += '</tr>';
+
+            $('#overallreport').append(html_data);
+            gmnametotal += gname
+            purchasetotal += purchase
+            invoicepricetotal += invoiceprice
+            margintotal += margin
+            insmargintotal += insmargin
+            finmargintotal += finmargin
+            accmargintotal += accmargin
+            incentivetotal += incentive
+            incometotal += income
+            offerpsmsharetotal += offerpsmshare
+            psmoffertotal += psmoffer
+            psmoffertotal += psmoffer
+            deliveryexptotal += deliveryexp
+            incentive1total += incentive1
+            financecosttotal += financecost
+            totalexptotal += totalexp
+            netmargintotal += netmargin
+            i++;
+          }
+
+          var html_data = '<tr><td></td><td style="text-align:center;"><b>Total</b></td><td style="text-align:center;color:green;"><b>'+gmnametotal+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(purchasetotal.toFixed(2))+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(invoicepricetotal.toFixed(2))+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(margintotal.toFixed(2))+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(insmargintotal.toFixed(2))+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(finmargintotal.toFixed(2))+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(accmargintotal.toFixed(2))+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(incentivetotal.toFixed(2))+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(incometotal.toFixed(2))+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(offerpsmsharetotal.toFixed(2))+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(psmoffertotal.toFixed(2))+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(deliveryexptotal.toFixed(2))+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(incentive1total.toFixed(2))+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(financecosttotal.toFixed(2))+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(totalexptotal.toFixed(2))+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(netmargintotal.toFixed(2))+'</b></td></tr>';
+          $('#overallreport').append(html_data);
+        }
+      });
+    });
+
+    function numberWithIndianCommas(x) {
+  var parts = x.toString().split(".");
+  var integerPart = parts[0];
+  var decimalPart = parts.length > 1 ? "." + parts[1] : "";
+  
+  var lastThreeDigits = integerPart.slice(-3);
+  var otherDigits = integerPart.slice(0, -3);
+  
+  if (otherDigits !== '') {
+    lastThreeDigits = ',' + lastThreeDigits;
+  }
+
+  var result = otherDigits.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + lastThreeDigits + decimalPart;
+  
+  return result;
+}
+  </script>
+  {% endblock scripts %}

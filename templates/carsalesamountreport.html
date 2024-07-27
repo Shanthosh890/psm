@@ -1,0 +1,225 @@
+{% extends 'layouts/main.html' %}
+
+{% block title %}
+Car Sales Model
+{% endblock title %}
+
+{% block style %}
+<style> 
+            
+             
+  th { 
+      white-space: nowrap; 
+      position: sticky;
+      top: 0;
+      background-color: #FFFFFF; 
+      z-index: 100;               
+  } 
+  td { 
+      white-space: nowrap; 
+  }
+  tr:nth-child(even) {
+    background-color: #f2f2f2;
+  } 
+  </style>
+{% endblock style %}
+
+{% block content %}
+{% include 'inc/topnav.html' %}
+{% include 'inc/menu.html' %}
+
+
+<body class="hold-transition sidebar-mini sidebar-collapse">
+  <div class="wrapper">
+    
+    <div class="content-wrapper">
+      <section class="content-header">
+        <div class="container-fluid">
+          <div class="row mb-2">
+            <div class="col-sm-6">&nbsp;
+            </div>
+            <div class="col-sm-6">
+              <ol class="breadcrumb float-sm-right">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Home</a></li>
+                <li class="breadcrumb-item active">Report</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </section> 
+      <!-- Main content -->
+      <section class="content">
+        <div class="card card-primary">
+          <div class="card-header">
+            <h3 class="card-title">Car Sales Report</h3>
+            <div class="card-tools">
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-2">
+                <div class="form-group-row">   
+                  <label>From</label>
+                  <input type="date" class="form-control" id="from" name="from">
+                </div>
+              </div>
+              <div class="col-2">
+                <div class="form-group-row">   
+                  <label>To</label>
+                  <input type="date" class="form-control" id="to" name="to">
+                </div>
+              </div>
+             
+             
+            </div>
+            <br>
+            <div class="row">
+              <div class="col-4">
+                <div class="form-group-row">  
+                  <button class="btn btn-primary" type="button" id="btn_result">Result</button>
+                </div>
+              </div>
+            </div><!--row-->
+            <br>
+            <table id="overallreport" class="table table-bordered table-sm table-striped">
+              <!-- Table content will be dynamically populated -->
+            </table>
+            <br><br><br>
+          </div><!--card--->
+        </div>
+      </section>
+    </div>
+  </div>
+
+  {% endblock content %}
+  {% include 'inc/footer.html' %}
+  {% block scripts %} 
+  <script>
+    $(function(){
+      $('.select2').select2();
+    });
+
+    $('#overallreport').DataTable({
+"scrollX": false,
+"scrollY": 350,
+"ordering": false,
+searching: false,
+paging: false,
+info: false,
+fixedHeader: {
+        header: true,
+        headerOffset: 0
+    },
+"columnDefs": [
+    { "visible": false, "targets": 0 },
+]
+});
+
+
+
+ 
+// btn_result 
+$(document).on('click', '#btn_result', function () {
+    var from = document.getElementById('from').value;
+    var to = document.getElementById('to').value;
+
+    $.ajax({
+        url: "{{ url_for('carsalesamountfetch_data') }}", 
+        type: "POST",
+        data: { from: from, to: to },
+        dataType: "json",
+        success: function (data) {
+            if (data.length === 0) {
+                Swal.fire({
+                    position: 'center',
+                    icon: 'error',
+                    title: 'No More Data.!',
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+            }
+
+            // Process data to get unique GM names
+            let gmNames = [...new Set(data.map(item => item.gmname))];
+
+            $('#overallreport').empty();
+            var thead = '<tr><th class="all" style="text-align:center;">Sl.No</th><th class="all" style="text-align:center;">Model</th>';
+            gmNames.forEach(gm => {
+                thead += `<th class="all" style="text-align:center;">${gm}</th>`;
+            });
+            thead += '<th class="all" style="text-align:center;">Grand Total</th></tr>';
+            $('#overallreport').append(thead);
+
+            // Group data by model
+            let modelData = {};
+            data.forEach(item => {
+                if (!modelData[item.model]) {
+                    modelData[item.model] = {};
+                    gmNames.forEach(gm => modelData[item.model][gm] = 0); // Initialize counts
+                }
+                modelData[item.model][item.gmname] = item.total_invoiceprice;
+            });
+
+            var i = 1;
+            var columnTotals = {};
+            gmNames.forEach(gm => columnTotals[gm] = 0);
+            columnTotals['Grand Total'] = 0;
+
+            for (var model in modelData) {
+                var html_data = `<tr><td style="text-align:center;">${i}</td>`;
+                html_data += `<td style="text-align:left;">${model}</td>`;
+                
+                let rowTotal = 0;
+                gmNames.forEach(gm => {
+                    let count = parseFloat(modelData[model][gm]) || 0;
+                    let formattedCount = count.toFixed(2);
+                    html_data += `<td style="text-align:right;">${numberWithIndianCommas(formattedCount)}</td>`;
+                    rowTotal += count;
+                    columnTotals[gm] += count;
+                });
+
+                let formattedRowTotal = rowTotal.toFixed(2);
+                html_data += `<td style="text-align:right;"><b>${numberWithIndianCommas(formattedRowTotal)}</b></td>`;
+                columnTotals['Grand Total'] += rowTotal;
+
+                html_data += '</tr>';
+                $('#overallreport').append(html_data);
+                i++;
+            }
+
+            // Append the Grand Total row
+            var grandTotalRow = '<tr><td style="text-align:center;"></td><td style="text-align:left;"><b>Grand Total</b></td>';
+            gmNames.forEach(gm => {
+                let formattedColumnTotal = columnTotals[gm].toFixed(2);
+                grandTotalRow += `<td style="text-align:right;color:green;"><b>${numberWithIndianCommas(formattedColumnTotal)}</b></td>`;
+            });
+            let formattedGrandTotal = columnTotals['Grand Total'].toFixed(2);
+            grandTotalRow += `<td style="text-align:right;color:green;"><b>${numberWithIndianCommas(formattedGrandTotal)}</b></td></tr>`;
+            $('#overallreport').append(grandTotalRow);
+
+            var html_data = '<tr></tr>';
+            $('#overallreport').append(html_data);
+        }
+    });
+});
+
+
+
+function numberWithIndianCommas(x) {
+  var parts = x.toString().split(".");
+  var integerPart = parts[0];
+  var decimalPart = parts.length > 1 ? "." + parts[1] : "";
+  
+  var lastThreeDigits = integerPart.slice(-3);
+  var otherDigits = integerPart.slice(0, -3);
+  
+  if (otherDigits !== '') {
+    lastThreeDigits = ',' + lastThreeDigits;
+  }
+
+  var result = otherDigits.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + lastThreeDigits + decimalPart;
+  
+  return result;
+}
+  </script>
+  {% endblock scripts %}

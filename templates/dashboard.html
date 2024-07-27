@@ -1,0 +1,166 @@
+{% extends 'layouts/main.html' %}
+
+{% block title %}
+Dashboard
+{% endblock title %}
+{% block styles %}
+<style>
+  #chart-container {
+    position: relative;
+    height: 400px; /* Set the height of the container */
+    width: 100%;    /* Ensure it takes full width of its parent */
+  }
+
+  #sales-chart {
+    height: 100% !important; /* Fill the height of the container */
+    width: 100% !important;  /* Fill the width of the container */
+  }
+</style>
+{% endblock styles %}
+
+{% block content %}
+{% include 'inc/topnav.html' %}
+{% include 'inc/menu.html' %}
+{% include 'inc/footer.html' %}
+<body class="hold-transition sidebar-mini sidebar-collapse">
+  <div class="wrapper">
+  
+    <!-- Content Wrapper. Contains page content -->
+    <div class="content-wrapper">
+      <!-- Content Header (Page header) -->
+      <div class="content-header">
+        <div class="container-fluid">
+          <div class="row mb-2">
+            <div class="col-sm-6">
+              <h4 class="m-0 text-dark">Dashboard</h4>
+            </div>
+            <div class="col-sm-6">
+              <ol class="breadcrumb float-sm-right">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Home</a></li>
+                <li class="breadcrumb-item active">Dashboard</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /.content-header -->
+
+      <!-- Main content -->
+      <section class="content">
+        <div class="col-lg-12">
+          <div class="card">
+            <div class="card-header border-0">
+              <div class="d-flex justify-content-between">
+                <h3 class="card-title">Sales</h3>
+                <!-- <a href="javascript:void(0);">View Report</a> -->
+              </div>
+            </div>
+          <div class="card-body">
+      
+            
+            <div class="d-flex  mb-2">
+              <button id="yearBtn" class="btn btn-primary">Year</button> &nbsp;&nbsp;
+              <button id="monthBtn" class="btn btn-secondary">Month</button>
+            </div>
+            <div class="position-relative mb-4">
+              <div id="chart-container" style="position: relative; height: 400px; width: 100%;">
+                <canvas id="sales-chart"></canvas>
+              </div>
+            </div>
+            
+          
+          
+          
+          
+          </div>
+          </div>
+      </div>
+      </section>
+ 
+    <!-- /.content-wrapper -->
+  </div>
+  <!-- /.wrapper -->
+  {% endblock content %}
+
+
+  {% block scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    var ctx = document.getElementById('sales-chart').getContext('2d');
+    
+    // Initialize the chart
+    var salesChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: [], // Will be filled with fetched data
+        datasets: [{
+          label: 'Sales Data',
+          backgroundColor: 'rgba(54, 162, 235, 0.6)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 1,
+          barThickness: 50,
+          data: [] // Will be filled with fetched data
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  
+    // Function to update the chart with new data
+    function updateChart(data) {
+      console.log('Updating chart with data:', data);
+      salesChart.data.labels = data.labels;
+      salesChart.data.datasets[0].data = data.data;
+      salesChart.update();
+    }
+  
+    // Fetch monthly data and update chart
+    function fetchMonthlyData() {
+      fetch('/fetch-monthly-data')
+        .then(response => response.json())
+        .then(data => {
+          console.log('Monthly data fetched:', data);
+          updateChart(data);
+        })
+        .catch(error => {
+          console.error('Error fetching monthly data:', error);
+        });
+    }
+  
+    // Fetch yearly data and update chart
+    function fetchYearlyData() {
+      fetch('/fetch-yearly-data')
+        .then(response => response.json())
+        .then(data => {
+          console.log('Yearly data fetched:', data);
+          updateChart(data);
+        })
+        .catch(error => {
+          console.error('Error fetching yearly data:', error);
+        });
+    }
+  
+    // Fetch the monthly data by default when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      fetchMonthlyData();
+    });
+  
+    // Event listener for the Year button
+    document.getElementById('yearBtn').addEventListener('click', function() {
+      fetchYearlyData(); // Fetch and update yearly data
+    });
+  
+    // Event listener for the Month button
+    document.getElementById('monthBtn').addEventListener('click', function() {
+      fetchMonthlyData(); // Fetch and update monthly data
+    });
+  </script>
+  
+{% endblock scripts %}

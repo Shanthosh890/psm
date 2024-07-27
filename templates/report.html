@@ -1,0 +1,519 @@
+{% extends 'layouts/main.html' %}
+
+{% block title %}
+Over All Report
+{% endblock title %}
+
+{% block style %}
+<style> 
+            
+             
+  th { 
+      white-space: nowrap; 
+      position: sticky;
+      top: 0;
+      background-color: #FFFFFF; 
+      z-index: 100;               
+  } 
+  td { 
+      white-space: nowrap; 
+  }
+  tr:nth-child(even) {
+    background-color: #f2f2f2;
+  } 
+  </style>
+{% endblock style %}
+
+{% block content %}
+{% include 'inc/topnav.html' %}
+{% include 'inc/menu.html' %}
+
+
+<body class="hold-transition sidebar-mini sidebar-collapse">
+  <div class="wrapper">
+    
+    <div class="content-wrapper">
+      <section class="content-header">
+        <div class="container-fluid">
+          <div class="row mb-2">
+            <div class="col-sm-6">&nbsp;
+            </div>
+            <div class="col-sm-6">
+              <ol class="breadcrumb float-sm-right">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Home</a></li>
+                <li class="breadcrumb-item active">Report</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </section> 
+      <!-- Main content -->
+      <section class="content">
+        <div class="card card-primary">
+          <div class="card-header">
+            <h3 class="card-title">Over All Report</h3>
+            <div class="card-tools">
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-2">
+                <div class="form-group-row">   
+                  <label>From</label>
+                  <input type="date" class="form-control" id="from" name="from">
+                </div>
+              </div>
+              <div class="col-2">
+                <div class="form-group-row">   
+                  <label>To</label>
+                  <input type="date" class="form-control" id="to" name="to">
+                </div>
+              </div>
+              <div class="col-2">
+                <div class="form-group-row">   
+                  <label>Vin Number</label>
+                  <select class="form-control select2" id="vinnumber"  name="vinnumber" >
+                    <option value="">-Select Chassis-</option>
+                    {% for option in vinnumber_options %}
+                    <option value="{{ option[0] }}">{{ option[0] }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="col-2">
+                <div class="form-group-row">   
+                  <label>Registration Name</label>
+                  <select class="form-control select2" id="registrationname"  name="registrationname" >
+                    <option value="">-Select Name-</option>
+                    {% for option in regname_options %}
+                    <option value="{{ option[0] }}">{{ option[0] }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="col-2">
+                <div class="form-group-row">   
+                  <label>Model</label>
+                  <select class="form-control select2" id="model"  name="model" >
+                    <option value="">-Select model-</option>
+                    {% for option in modeloptions %}
+                    <option value="{{ option[0] }}">{{ option[0] }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="col-2">
+                <div class="form-group-row">   
+                  <label>Branch</label>
+                  <select class="form-control select2" id="gmname"  name="gmname" >
+                    <option value="">-Select Branch-</option>
+                    {% for option in gmnameoptions %}
+                    <option value="{{ option[0] }}">{{ option[0] }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <br>
+            <div class="row">
+              <div class="col-4">
+                <div class="form-group-row">  
+                  <button class="btn btn-primary" type="button" id="btn_result">Result</button>
+                </div>
+              </div>
+            </div><!--row-->
+            <br>
+            <table id="overallreport" class="table table-bordered table-sm table-striped">
+              <!-- Table content will be dynamically populated -->
+            </table>
+            <br><br><br>
+          </div><!--card--->
+        </div>
+      </section>
+    </div>
+  </div>
+
+  {% endblock content %}
+  {% include 'inc/footer.html' %}
+  {% block scripts %} 
+  <script>
+    $(function(){
+      $('.select2').select2();
+    });
+
+    $('#overallreport').DataTable({
+    "scrollX": false,
+    "scrollY": 350,
+    "ordering": false,
+    "searching": false,
+    "paging": false,
+    "info": false,
+    "fixedHeader": {
+        header: true,
+        footer: true,
+        headerOffset: 0
+    },
+    "columnDefs": [
+        { "visible": false, "targets": 0 }
+    ]
+});
+
+
+
+    // btn_result 
+    $(document).on('click', '#btn_result', function () {
+      var vinnumber = document.getElementById('vinnumber').value;
+      var from = document.getElementById('from').value;
+      var to = document.getElementById('to').value;
+      var registrationname = document.getElementById('registrationname').value;
+      var model = document.getElementById('model').value;
+      var gmname = document.getElementById('gmname').value;
+
+      $.ajax({
+        url: "{{ url_for('fetch_data') }}", 
+        type: "POST",
+        data: { vinnumber: vinnumber, from: from, to: to,registrationname:registrationname,model:model,gmname:gmname},
+        dataType: "json",
+        success: function (data) {
+          if (data.length === 0) {
+            Swal.fire({
+              position: 'center',
+              icon: 'error',
+              title: 'No More Data.!',
+              showConfirmButton: false,
+              timer: 1500
+            });
+          }
+
+          $('#overallreport').empty();
+          var thead = '<tr><th class="all" style="text-align:center;">Sl.No</th><th class="all" style="text-align:center;">Confirm Date</th><th class="all" style="text-align:center;">Invoice Date</th><th class="all" style="text-align:center;">Delivery Date</th><th class="all" style="text-align:center;">Status</th><th class="all" style="text-align:center;">Invoice No</th><th class="all" style="text-align:center;">Registration Name</th><th class="all" style="text-align:center;">Contact Num1</th><th class="all" style="text-align:center;">Contact Num 2</th><th class="all" style="text-align:center;">Contact Num 3</th><th class="all" style="text-align:center;">Model</th><th class="all" style="text-align:center;">Varient</th><th class="all" style="text-align:center;">Color</th><th class="all" style="text-align:center;">HMI Invoice No</th><th class="all" style="text-align:center;">Vin Number</th><th class="all" style="text-align:center;">PURCHASE DATE</th><th class="all" style="text-align:center;">DELIVERY DATE</th><th class="all" style="text-align:center;">Mode of Purchase</th><th class="all" style="text-align:center;">DSA/Financier</th><th class="all" style="text-align:center;">Basic Amount</th><th class="all" style="text-align:center;">Invoice Price</th><th class="all" style="text-align:center;">Other Charge Amount</th><th class="all" style="text-align:center;">Dealer Cash Discount</th><th class="all" style="text-align:center;">Other Discount</th><th class="all" style="text-align:center;">Insurance In house (Y/N)</th><th class="all" style="text-align:center;">GM NAME</th><th class="all" style="text-align:center;">Consultant Name</th><th class="all" style="text-align:center;">Address</th><th class="all" style="text-align:center;">City</th><th class="all" style="text-align:center;">State</th><th class="all" style="text-align:center;">Pin No</th><th class="all" style="text-align:center;">Age</th><th class="all" style="text-align:center;">Pan No</th><th class="all" style="text-align:center;">Customer Id</th><th class="all" style="text-align:center;">Booking Date</th><th class="all" style="text-align:center;">CGST %</th><th class="all" style="text-align:center;">SGST %</th><th class="all" style="text-align:center;">IGST %</th><th class="all" style="text-align:center;">Comp Cess %</th><th class="all" style="text-align:center;">CGST Amount</th><th class="all" style="text-align:center;">SGST Amount</th><th class="all" style="text-align:center;">IGST Amount</th><th class="all" style="text-align:center;">Comp Cess Amount</th><th class="all" style="text-align:center;">Customer GST No</th><th class="all" style="text-align:center;">Source</th><th class="all" style="text-align:center;">Sub Source</th><th class="all" style="text-align:center;">Activity</th><th class="all" style="text-align:center;">Location</th><th class="all" style="text-align:center;">Delivery Update Method</th><th class="all" style="text-align:center;">Delivery in Days</th><th class="all" style="text-align:center;">Purchase Including GST</th><th class="all" style="text-align:center;">Purchase Cost</th><th class="all" style="text-align:center;">Margin</th><th class="all" style="text-align:center;">Insurance</th><th class="all" style="text-align:center;">INS Margin</th><th class="all" style="text-align:center;">Finance</th><th class="all" style="text-align:center;">FIN Margin</th><th class="all" style="text-align:center;">ACCS</th><th class="all" style="text-align:center;">ACC Margin</th><th class="all" style="text-align:center;">EW / SOT</th><th class="all" style="text-align:center;">Incentive</th><th class="all" style="text-align:center;">Income</th><th class="all" style="text-align:center;">Hyundai Offer Share</th><th class="all" style="text-align:center;">Offer PSM Share</th><th class="all" style="text-align:center;">Hyundai Offer Insurance</th><th class="all" style="text-align:center;">Insurance PSM Share</th><th class="all" style="text-align:center;">Hyundai Offer Exchange</th><th class="all" style="text-align:center;">Exchange PSM Share</th><th class="all" style="text-align:center;">Hyundai Offer Ext Waranty</th><th class="all" style="text-align:center;">EW PSM Share</th><th class="all" style="text-align:center;">Hyundai Offer RSA</th><th class="all" style="text-align:center;">RSA PSM Share</th><th class="all" style="text-align:center;">Hyundai Offer POI</th><th class="all" style="text-align:center;">POI PSM Share</th><th class="all" style="text-align:center;">Hyundai Offer Others</th><th class="all" style="text-align:center;">Others PSM Share</th><th class="all" style="text-align:center;">PSM EXT Waranty</th><th class="all" style="text-align:center;">PSM Offer</th><th class="all" style="text-align:center;">PSM ACC</th><th class="all" style="text-align:center;">Delivery EXP</th><th class="all" style="text-align:center;">Incentive</th><th class="all" style="text-align:center;">Finance Cost</th><th class="all" style="text-align:center;">Total EXP</th><th class="all" style="text-align:center;">Net Margin</th><th class="all" style="text-align:center;">Total Percentage</th></tr>';
+          $('#overallreport').append(thead);
+
+          var i = 1;
+         
+          var cgstamount = 0; 
+          var sgstamount = 0; 
+          var igstamount = 0; 
+          var compamount = 0; 
+          var basicamounttotal = 0; 
+          var invoicepricetotal = 0; 
+          var otherchargeamounttotal = 0; 
+          var delaercashdistotal = 0; 
+          var otherdiscounttotal = 0; 
+          var purchaseincgsttotal = 0; 
+          var purchasecosttotal = 0; 
+          var margintotal = 0; 
+          var insurancetotal = 0; 
+          var insmargintotal = 0; 
+          var financetotal = 0; 
+          var finmargintotal = 0; 
+          var accstotal = 0; 
+          var accmargintotal = 0; 
+          var ewsottotal = 0; 
+          var incentivetotal = 0; 
+          var incometotal = 0; 
+          var hyundaioffersharetotal = 0; 
+          var offerpsmsharetotal = 0; 
+          var hyundaiofferinsurancetotal = 0; 
+          var insurancepsmsharetotal = 0; 
+          var hyundaiofferexchangetotal = 0; 
+          var exchangepsmsharetotal = 0; 
+          var hyundaiofferextwarrantytotal = 0; 
+          var ewpsmsharetotal = 0; 
+          var hyundaiofferrsatotal = 0; 
+          var rsapsmsharetotal = 0; 
+          var hyundaiofferpoitotal = 0; 
+          var poipsmsharetotal = 0; 
+          var hyundaiofferothertotal = 0; 
+          var otherspsmsharetotal = 0; 
+          var psmextwarrentytotal = 0; 
+          var psmoffertotal = 0; 
+          var psmacctotal = 0; 
+          var deliveryexptotal = 0; 
+          var incentive1total = 0; 
+          var financecosttotal = 0; 
+          var totalexptotal = 0; 
+          var netmargintotal = 0; 
+          
+        
+          for (var count = 0; count < data.length; count++) {
+
+   
+            var cgstamount = parseFloat(data[count].cgstamount) || 0;
+            var sgstamount = parseFloat(data[count].sgstamount) || 0;
+            var igstamount = parseFloat(data[count].igstamount) || 0;
+            var compcessamount = parseFloat(data[count].compcessamount) || 0;
+            var basicamount = parseFloat(data[count].basicamount) || 0;
+            var invoiceprice = parseFloat(data[count].invoiceprice) || 0;
+            var otherchargeamount = parseFloat(data[count].otherchargeamount) || 0;
+            var delaercashdis = parseFloat(data[count].delaercashdis) || 0;
+            var otherdiscount = parseFloat(data[count].otherdiscount) || 0;
+            var purchaseincgst = parseFloat(data[count].purchaseincgst) || 0;
+            var purchasecost = parseFloat(data[count].purchasecost) || 0;
+            var margin = parseFloat(data[count].margin) || 0;
+            var insurance = parseFloat(data[count].insurance) || 0;
+            var insmargin = parseFloat(data[count].insmargin) || 0;
+            var finance = parseFloat(data[count].finance) || 0;
+            var finmargin = parseFloat(data[count].finmargin) || 0;
+            var accs = parseFloat(data[count].accs) || 0;
+            var accmargin = parseFloat(data[count].accmargin) || 0;
+            var ewsot = parseFloat(data[count].ewsot) || 0;
+            var incentive = parseFloat(data[count].incentive) || 0;
+            var income = parseFloat(data[count].income) || 0;
+            var hyundaioffershare = parseFloat(data[count].hyundaioffershare) || 0;
+            var offerpsmshare = parseFloat(data[count].offerpsmshare) || 0;
+            var hyundaiofferinsurance = parseFloat(data[count].hyundaiofferinsurance) || 0;
+            var insurancepsmshare = parseFloat(data[count].insurancepsmshare) || 0;
+            var hyundaiofferexchange = parseFloat(data[count].hyundaiofferexchange) || 0;
+            var exchangepsmshare = parseFloat(data[count].exchangepsmshare) || 0;
+            var hyundaiofferextwarranty = parseFloat(data[count].hyundaiofferextwarranty) || 0;
+            var ewpsmshare = parseFloat(data[count].ewpsmshare) || 0;
+            var hyundaiofferrsa = parseFloat(data[count].hyundaiofferrsa) || 0;
+            var rsapsmshare = parseFloat(data[count].rsapsmshare) || 0;
+            var hyundaiofferpoi = parseFloat(data[count].hyundaiofferpoi) || 0;
+            var poipsmshare = parseFloat(data[count].poipsmshare) || 0;
+            var hyundaiofferother = parseFloat(data[count].hyundaiofferother) || 0;
+            var otherspsmshare = parseFloat(data[count].otherspsmshare) || 0;
+            var psmextwarrenty = parseFloat(data[count].psmextwarrenty) || 0;
+            var psmoffer = parseFloat(data[count].psmoffer) || 0;
+            var deliveryexp = parseFloat(data[count].deliveryexp) || 0;
+            var incentive1 = parseFloat(data[count].incentive1) || 0;
+            var financecost = parseFloat(data[count].financecost) || 0;
+            var totalexp = parseFloat(data[count].totalexp) || 0;
+            var netmargin = parseFloat(data[count].netmargin) || 0;
+            var psmacc = parseFloat(data[count].psmacc) || 0;
+            var totalinc = insmargin+finmargin+accmargin+ewsot+incentive+invoiceprice+hyundaioffershare;
+            var totalexp = offerpsmshare+insurancepsmshare+exchangepsmshare+ewpsmshare+rsapsmshare+poipsmshare+otherspsmshare+psmextwarrenty+psmoffer+psmacc+deliveryexp+incentive1+financecost+purchasecost;
+
+            var totalmargin =totalinc-totalexp ;
+            var totalmarginper=totalmargin/totalexp*100;
+            
+            var confirmdate = data[count].confirmdate;
+        var formattedConfirmDate = '';
+
+        if (confirmdate) {
+          var dateObj = new Date(confirmdate);
+          if (!isNaN(dateObj.getTime())) {
+            formattedConfirmDate = dateObj.toISOString().split('T')[0];
+          }
+        }
+
+        var confirmdate = data[count].confirmdate;
+        var formattedConfirmDate = '';
+
+        if (confirmdate) {
+          var dateObj = new Date(confirmdate);
+          if (!isNaN(dateObj.getTime())) {
+            formattedConfirmDate = dateObj.toISOString().split('T')[0];
+          }
+        }
+
+        var invoicedate = data[count].invoicedate;
+        var formattedinvoicedate = '';
+
+        if (invoicedate) {
+          var dateObj = new Date(invoicedate);
+          if (!isNaN(dateObj.getTime())) {
+            formattedinvoicedate = dateObj.toISOString().split('T')[0];
+          }
+        }
+
+        var deliverydate = data[count].deliverydate;
+        var formatteddeliverydate = '';
+
+        if (deliverydate) {
+          var dateObj = new Date(deliverydate);
+          if (!isNaN(dateObj.getTime())) {
+            formatteddeliverydate = dateObj.toISOString().split('T')[0];
+          }
+        }
+
+        var purchasedate = data[count].purchasedate;
+        var formattedpurchasedate = '';
+
+        if (purchasedate) {
+          var dateObj = new Date(purchasedate);
+          if (!isNaN(dateObj.getTime())) {
+            formattedpurchasedate = dateObj.toISOString().split('T')[0];
+          }
+        }
+        var deliverydate1 = data[count].deliverydate1;
+        var formatteddeliverydate1 = '';
+
+        if (deliverydate1) {
+          var dateObj = new Date(deliverydate1);
+          if (!isNaN(dateObj.getTime())) {
+            formatteddeliverydate1 = dateObj.toISOString().split('T')[0];
+          }
+        }
+        var bookingdate = data[count].bookingdate;
+        var formattedbookingdate = '';
+
+        if (bookingdate) {
+          var dateObj = new Date(bookingdate);
+          if (!isNaN(dateObj.getTime())) {
+            formattedbookingdate = dateObj.toISOString().split('T')[0];
+          }
+        }
+
+            var html_data = '';
+            html_data += '<tr><td style="text-align:center;">' + i + '</td>';
+            html_data += '<td style="text-align:center;">' +(formattedConfirmDate ? formattedConfirmDate : '')+ '</td>';
+            html_data += '<td style="text-align:center;">' +(formattedinvoicedate ? formattedinvoicedate : '')+ '</td>';
+            html_data += '<td style="text-align:center;">' +(formatteddeliverydate ? formatteddeliverydate : '')+ '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].status ? data[count].status : '')+ '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].invoiceno ? data[count].invoiceno : '')+ '</td>';
+            html_data += '<td style="text-align:left;">' +(data[count].registrationname ? data[count].registrationname : '')+ '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].contactnum1 ? data[count].contactnum1 : '') + '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].contactnum2 ? data[count].contactnum2 : '') + '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].contactnum3 ? data[count].contactnum3 : '')+ '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].model ? data[count].model : '')+ '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].variant ? data[count].variant : '')+ '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].color ? data[count].color : '') + '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].hmiinvoiceno ? data[count].hmiinvoiceno : '') + '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].vinnumber ? data[count].vinnumber : '')  + '</td>';
+            html_data += '<td style="text-align:center;">' +(formattedpurchasedate ? formattedpurchasedate : '') + '</td>';
+            html_data += '<td style="text-align:center;">' +(formatteddeliverydate1? formatteddeliverydate1 : '') + '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].modeofpay ? data[count].modeofpay : '') + '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].dsafin ? data[count].dsafin : '')  + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].basicamount ? data[count].basicamount : ''))  + '</td>';
+            html_data += '<td style="text-align:right;color:green;">' +numberWithIndianCommas((data[count].invoiceprice ? data[count].invoiceprice : ''))+ '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].otherchargeamount ? data[count].otherchargeamount : '')) + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].delaercashdis ? data[count].delaercashdis : '')) + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].otherdiscount ? data[count].otherdiscount : ''))  + '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].insuranceinhouse ? data[count].insuranceinhouse : '')+ '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].gmname ? data[count].gmname : '') + '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].consultantname ? data[count].consultantname : '')  + '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].address ? data[count].address : '')  + '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].city ? data[count].city : '')  + '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].state ? data[count].state : '')  + '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].pinno ? data[count].pinno : '')  + '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].age ? data[count].age : '')  + '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].panno ? data[count].panno : '') + '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].customerid ? data[count].customerid : '')  + '</td>';
+            html_data += '<td style="text-align:center;">' +(formattedbookingdate ? formattedbookingdate : '')  + '</td>';
+            html_data += '<td style="text-align:right;">' +(data[count].cgstp ? data[count].cgstp : '')  + '</td>';
+            html_data += '<td style="text-align:right;">' +(data[count].sgstp ? data[count].sgstp : '')  + '</td>';
+            html_data += '<td style="text-align:right;">' +(data[count].igstp ? data[count].igstp : '') + '</td>';
+            html_data += '<td style="text-align:right;">' +(data[count].compcess ? data[count].compcess : '')  + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].cgstamount ? data[count].cgstamount : ''))  + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].sgstamount ? data[count].sgstamount : '')) + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].igstamount ? data[count].igstamount : '')) + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].compcessamount ? data[count].compcessamount : '')) + '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].customergstno ? data[count].customergstno : '') + '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].source ? data[count].source : '')+ '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].subsource ? data[count].subsource : '') + '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].activity ? data[count].activity : '')  + '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].location ? data[count].location : '') + '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].deliverydateupdatingmethod ? data[count].deliverydateupdatingmethod : '')+ '</td>';
+            html_data += '<td style="text-align:center;">' +(data[count].deliveryindays ? data[count].deliveryindays : '') + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].purchaseincgst ? data[count].purchaseincgst : '')) + '</td>';
+            html_data += '<td style="text-align:right;color:green;">' +numberWithIndianCommas((data[count].purchasecost ? data[count].purchasecost : '')) + '</td>';
+            html_data += '<td style="text-align:right;color:green;">' +numberWithIndianCommas((data[count].margin ? data[count].margin : '')) + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].insurance ? data[count].insurance : '')) + '</td>';
+            html_data += '<td style="text-align:right;color:green;">' +numberWithIndianCommas((data[count].insmargin ? data[count].insmargin : '')) + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].finance ? data[count].finance : '')) + '</td>';
+            html_data += '<td style="text-align:right;color:green;">' +numberWithIndianCommas((data[count].finmargin ? data[count].finmargin : '')) + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].accs ? data[count].accs : '')) + '</td>';
+            html_data += '<td style="text-align:right;color:green;">' +numberWithIndianCommas((data[count].accmargin ? data[count].accmargin : '')) + '</td>';
+            html_data += '<td style="text-align:right;color:green;">' +numberWithIndianCommas((data[count].ewsot ? data[count].ewsot : '')) + '</td>';
+            html_data += '<td style="text-align:right;color:green;">' +numberWithIndianCommas((data[count].incentive ? data[count].incentive : '')) + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].income ? data[count].income : '')) + '</td>';
+            html_data += '<td style="text-align:right;color:green;">' +numberWithIndianCommas((data[count].hyundaioffershare ? data[count].hyundaioffershare : '')) + '</td>';
+            html_data += '<td style="text-align:right;color:blue;">' +numberWithIndianCommas((data[count].offerpsmshare ? data[count].offerpsmshare : '')) + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].hyundaiofferinsurance ? data[count].hyundaiofferinsurance : '')) + '</td>';
+            html_data += '<td style="text-align:right;color:blue;">' +numberWithIndianCommas((data[count].insurancepsmshare ? data[count].insurancepsmshare : '')) + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].hyundaiofferexchange ? data[count].hyundaiofferexchange : '')) + '</td>';
+            html_data += '<td style="text-align:right;color:blue;">' +numberWithIndianCommas((data[count].exchangepsmshare ? data[count].exchangepsmshare : '')) + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].hyundaiofferextwarranty ? data[count].hyundaiofferextwarranty : '')) + '</td>';
+            html_data += '<td style="text-align:right;color:blue;">' +numberWithIndianCommas((data[count].ewpsmshare ? data[count].ewpsmshare : '')) + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].hyundaiofferrsa ? data[count].hyundaiofferrsa : '')) + '</td>';
+            html_data += '<td style="text-align:right;color:blue;">' +numberWithIndianCommas((data[count].rsapsmshare ? data[count].rsapsmshare : '')) + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].hyundaiofferpoi ? data[count].hyundaiofferpoi : '')) + '</td>';
+            html_data += '<td style="text-align:right;color:blue;">' +numberWithIndianCommas((data[count].poipsmshare ? data[count].poipsmshare : '')) + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].hyundaiofferother ? data[count].hyundaiofferother : '')) + '</td>';
+            html_data += '<td style="text-align:right;color:blue;">' +numberWithIndianCommas((data[count].otherspsmshare ? data[count].otherspsmshare : '')) + '</td>';
+            html_data += '<td style="text-align:right;color:blue;">' +numberWithIndianCommas((data[count].psmextwarrenty ? data[count].psmextwarrenty : '')) + '</td>';
+            html_data += '<td style="text-align:right;color:blue;">' +numberWithIndianCommas((data[count].psmoffer ? data[count].psmoffer : '')) + '</td>';
+            html_data += '<td style="text-align:right;color:blue;">' +numberWithIndianCommas((data[count].psmacc ? data[count].psmacc : '')) + '</td>';
+            html_data += '<td style="text-align:right;color:blue;">' +numberWithIndianCommas((data[count].deliveryexp ? data[count].deliveryexp : '')) + '</td>';
+            html_data += '<td style="text-align:right;color:blue;">' +numberWithIndianCommas((data[count].incentive1 ? data[count].incentive1 : '')) + '</td>';
+            html_data += '<td style="text-align:right;color:blue;">' +numberWithIndianCommas((data[count].financecost ? data[count].financecost : '')) + '</td>';
+            html_data += '<td style="text-align:right;color:blue;"">' +numberWithIndianCommas((data[count].totalexp ? data[count].totalexp : '')) + '</td>';
+            html_data += '<td style="text-align:right;">' +numberWithIndianCommas((data[count].netmargin ? data[count].netmargin : '')) + '</td>';
+            html_data += '<td style="text-align:right;">' +totalmarginper.toFixed(2) + ' % </td>';
+            html_data += '</tr>';
+
+            $('#overallreport').append(html_data);
+          
+            cgstamount += cgstamount;
+            sgstamount += sgstamount;
+            igstamount += igstamount;
+            compcessamount += compcessamount;
+            basicamounttotal += basicamount;
+            invoicepricetotal += invoiceprice;
+            otherchargeamounttotal += otherchargeamount;
+            delaercashdistotal += delaercashdis;
+            otherdiscounttotal += otherdiscount;
+            purchaseincgsttotal += purchaseincgst;
+            purchasecosttotal += purchasecost;
+            insurancetotal += insurance;
+            insmargintotal += insmargin;
+            financetotal += finance;
+            finmargintotal += finmargin;
+            accstotal += accs;
+            accmargintotal += accmargin;
+            ewsottotal += ewsot;
+            incentivetotal += incentive;
+            incometotal += income;
+            hyundaioffersharetotal += hyundaioffershare;
+            offerpsmsharetotal += offerpsmshare;
+            hyundaiofferinsurancetotal += hyundaiofferinsurance;
+            insurancepsmsharetotal += insurancepsmshare;
+            hyundaiofferexchangetotal += hyundaiofferexchange;
+            exchangepsmsharetotal += exchangepsmshare;
+            hyundaiofferextwarrantytotal += hyundaiofferextwarranty;
+            ewpsmsharetotal += ewpsmshare;
+            hyundaiofferrsatotal += hyundaiofferrsa;
+            rsapsmsharetotal += rsapsmshare;
+            hyundaiofferpoitotal += hyundaiofferpoi;
+            poipsmsharetotal += poipsmshare;
+            hyundaiofferothertotal += hyundaiofferother;
+            otherspsmsharetotal += otherspsmshare;
+            psmextwarrentytotal += psmextwarrenty;
+            psmoffertotal += psmoffer;
+            psmacctotal += psmacc;
+            deliveryexptotal += deliveryexp;
+            incentive1total += incentive1;
+            financecosttotal += financecost;
+            totalexptotal += totalexp;
+            netmargintotal += netmargin;
+           
+          
+            i++;
+          }
+
+          var html_data = '<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td style="text-align:center;"><b>Total<b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(basicamounttotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(invoicepricetotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(otherchargeamounttotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(delaercashdistotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(otherdiscounttotal)+'</b></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td style="text-align:center;"></td><td style="text-align:right;color:green;"><b><b></td><td style="text-align:right;color:green;"><b><b></td><td style="text-align:right;color:green;"><b><b></td><td style="text-align:right;color:green;"><b><b></td><td  style="text-align:right;color:green;"><b>'+numberWithIndianCommas(cgstamount)+'<b></td><td  style="text-align:right;color:green;"><b>'+numberWithIndianCommas(sgstamount)+'<b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(igstamount)+'<b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(compcessamount)+'<b></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(purchaseincgsttotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(purchasecosttotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(margintotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(insurancetotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(insmargintotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(financetotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(finmargintotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(accstotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(accmargintotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(ewsottotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(incentivetotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(incometotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(hyundaioffersharetotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(offerpsmsharetotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(hyundaiofferinsurancetotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(insurancepsmsharetotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(hyundaiofferexchangetotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(exchangepsmsharetotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(hyundaiofferextwarrantytotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(ewpsmsharetotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(hyundaiofferrsatotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(rsapsmsharetotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(hyundaiofferpoitotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(poipsmsharetotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(hyundaiofferothertotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(otherspsmsharetotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(psmextwarrentytotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(psmoffertotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(psmacctotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(deliveryexptotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(incentive1total)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(financecosttotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(totalexptotal)+'</b></td><td style="text-align:right;color:green;"><b>'+numberWithIndianCommas(netmargintotal)+'</b></td><td style="text-align:right;color:green;"></td></tr>';
+          $('#overallreport').append(html_data);
+        }
+      });
+    });
+
+    function numberWithIndianCommas(x) {
+  var parts = x.toString().split(".");
+  var integerPart = parts[0];
+  var decimalPart = parts.length > 1 ? "." + parts[1] : "";
+  
+  var lastThreeDigits = integerPart.slice(-3);
+  var otherDigits = integerPart.slice(0, -3);
+  
+  if (otherDigits !== '') {
+    lastThreeDigits = ',' + lastThreeDigits;
+  }
+
+  var result = otherDigits.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + lastThreeDigits + decimalPart;
+  
+  return result;
+}
+  </script>
+  {% endblock scripts %}
